@@ -20,12 +20,14 @@ conexion.close()
 df = data_air
 df["date"] = df["unix_measurement_dt"].apply(lambda r: datetime.datetime.fromtimestamp(r))
 df["month"] = df["date"].dt.month
+df["year"] = df["date"].dt.year
 
-month_aqi_df = df.groupby("month", as_index=False)["aqi"].mean()
+month_aqi_df = df.groupby(by=["year", "month"], as_index=False)["aqi"].mean()
 month_aqi_df['aqi'] = month_aqi_df['aqi'].apply(lambda aqi_val: round(aqi_val, 2))
-months_name = ['null', 'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 
-    'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre']
-month_aqi_df['month'] = month_aqi_df['month'].apply(lambda m_num: months_name[m_num])
+months_name = ['null', 'Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 
+    'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic']
+month_aqi_df['year-month'] = month_aqi_df.apply(lambda row: f'{int(row["year"]) % 2000}/{months_name[int(row["month"])]}', axis = 1)
+month_aqi_df['month-name'] = month_aqi_df.apply(lambda row: f'{months_name[int(row["month"])]}', axis = 1)
 
 # ---------- Dashboard ----------
 
@@ -34,7 +36,7 @@ app.title = "Calidad del aire"
 
 # Componente 1: Calidad del aire por meses
 data1 = dict(
-    x=month_aqi_df["month"],
+    x=month_aqi_df["year-month"],
     y=month_aqi_df["aqi"],
     name="Calidad del aire por meses",
     marker=dict(
@@ -42,16 +44,24 @@ data1 = dict(
     )
 )
 layout1 = dict(
-    title="Calidad del aire por meses",
+    title="Progreso de la calidad del aire por mes",
     showlegend=True,
-    legend=dict(
-        x='Mes',
-        y='aqi (Indice de calidad del aire)'
-    ),
-    xaxis_title='Mes',
-    axis_title='aqi (Índice de calidad del aire)',
+    xaxis=dict(title="Año/Mes"),
+    yaxis=dict(title="AQI (Indice de calidad del aire)"),
     margin=dict(l=40, r=0, t=40, b=30)
 )
+
+# Componente 2: Comparación de la calidad del aire a partir de años.
+
+layout2 = dict(
+    title="Comparación de la calidad del aire entre años",
+    showlegend=True,
+    xaxis=dict(title="Mes"),
+    yaxis=dict(title="AQI (Indice de calidad del aire)"),
+    margin=dict(l=40, r=0, t=40, b=30)
+)
+
+# ---------
 
 app.layout = html.Div([
     dcc.Graph(
@@ -62,7 +72,36 @@ app.layout = html.Div([
         ),
         style={
             'height': 300, 
-            'width': 1300,
+            #'width': 1300,
+            'margin': 'auto'
+        }
+    ),
+    dcc.Graph(
+        id='aqi-by-year',
+        figure=dict(
+            data=[
+                dict(
+                    x=month_aqi_df[month_aqi_df["year"] == 2021]["month-name"],
+                    y=month_aqi_df[month_aqi_df["year"] == 2021]["aqi"],
+                    name="Calidad del aire en 2021",
+                    marker=dict(
+                        color="rgb(26, 118, 255)"
+                    )
+                ),
+                dict(
+                    x=month_aqi_df[month_aqi_df["year"] == 2022]["month-name"],
+                    y=month_aqi_df[month_aqi_df["year"] == 2022]["aqi"],
+                    name="Calidad del aire en 2022",
+                    marker=dict(
+                        color="red"
+                    )
+                )
+            ],
+            layout=layout2
+        ),
+        style={
+            'height': 300, 
+            #'width': 1300,
             'margin': 'auto'
         }
     )
