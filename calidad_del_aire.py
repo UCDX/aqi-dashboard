@@ -1,56 +1,77 @@
 import plotly           #(version 4.5.4) pip install plotly==4.5.4
-import dash
-import dash_core_components as dcc
-import dash_html_components as html
+from dash import Dash, dcc, html
 import plotly.graph_objs as go
 from dash.dependencies import Input, Output
 import psycopg2
 import pandas as pd
+import datetime
 
-# Conectamos la base de datos
+# ---------- Conexión a la base de datos ----------
 conexion = psycopg2.connect(host= "school-projects.cf1pikxnxsbu.us-east-2.rds.amazonaws.com",
                             database= "aqi_project",
                             user= "aqi_project_user",
                             password= "b58a74a2700d5f2bfaa2")
-
 # Almacenamos los datos en una dataframe
 data_air = pd.read_sql("SELECT * FROM air_measurements", conexion)
 # Cerramos la conexión
 conexion.close()
 
-app = dash.Dash(__name__)
-
+# ---------- Preprocesamiento ----------
 df = data_air
-#Objetos plotly.graph
-data1 = [go.Scatter(x=df["co"],
-                    y=df["aqi"],
-                    mode="lines")]
+df["date"] = df["unix_measurement_dt"].apply(lambda r: datetime.datetime.fromtimestamp(r))
+df["month"] = df["date"].dt.month
 
-layout1 = go.Layout(title="prueba",
-                    xaxis=dict(title="co"),
-                    yaxis=dict(title="aqi"))
+month_aqi_df = df.groupby("month", as_index=False)["aqi"].mean()
+month_aqi_df['aqi'] = month_aqi_df['aqi'].apply(lambda aqi_val: round(aqi_val, 2))
+months_name = ['null', 'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 
+    'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre']
+month_aqi_df['month'] = month_aqi_df['month'].apply(lambda m_num: months_name[m_num])
 
-data2 = [go.Bar(x=df["aqi"],
-                    y=df["co"])]
+# ---------- Dashboard ----------
 
-layout2 = go.Layout(title="preuba2",
-                    xaxis=dict(title="aqi"),
-                    yaxis=dict(title="co"))
+app = Dash(__name__)
+app.title = "Calidad del aire"
 
-#Definición del layout de la app a partir de componentes HTML y Core
+# Componente 1: Calidad del aire por meses
+data1 = dict(
+    x=month_aqi_df["month"],
+    y=month_aqi_df["aqi"],
+    name="Calidad del aire por meses",
+    marker=dict(
+        color="rgb(26, 118, 255)"
+    )
+)
+layout1 = dict(
+    title="Calidad del aire por meses",
+    showlegend=True,
+    legend=dict(
+        x='Mes',
+        y='aqi (Indice de calidad del aire)'
+    ),
+    xaxis_title='Mes',
+    axis_title='aqi (Índice de calidad del aire)',
+    margin=dict(l=40, r=0, t=40, b=30)
+)
+
 app.layout = html.Div([
-                    dcc.Graph(id='lineplot', #Creación componente Graph 1
-                    figure = {'data':data1,
-                            'layout':layout1}
-                    ),
-                    dcc.Graph(id='barplot', #Creación componente Graph 2
-                    figure = {'data':data2,
-                            'layout':layout2}
-                                    )])
+    dcc.Graph(
+        id='aqi-per-month',
+        figure=dict(
+            data=[data1],
+            layout=layout1
+        ),
+        style={
+            'height': 300, 
+            'width': 1300,
+            'margin': 'auto'
+        }
+    )
+])
 
 #Sentencias para abrir el servidor al ejecutar este script
 if __name__ == '__main__':
-    app.run_server(port=8000)
+    app.run_server(port=8000, debug=True)
+
 # app = dash.Dash(__name__)
 #
 # df = pd.read_csv('ejemplo.csv')
