@@ -20,12 +20,13 @@ conexion.close()
 df = data_air
 df["date"] = df["unix_measurement_dt"].apply(lambda r: datetime.datetime.fromtimestamp(r))
 df["month"] = df["date"].dt.month
+df["year"] = df["date"].dt.year
 
-month_aqi_df = df.groupby("month", as_index=False)["aqi"].mean()
+month_aqi_df = df.groupby(by=["year", "month"], as_index=False)["aqi"].mean()
 month_aqi_df['aqi'] = month_aqi_df['aqi'].apply(lambda aqi_val: round(aqi_val, 2))
-months_name = ['null', 'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 
-    'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre']
-month_aqi_df['month'] = month_aqi_df['month'].apply(lambda m_num: months_name[m_num])
+months_name = ['null', 'Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 
+    'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic']
+month_aqi_df['year-month'] = month_aqi_df.apply(lambda row: f'{int(row["year"]) % 2000}/{months_name[int(row["month"])]}', axis = 1)
 
 # ---------- Dashboard ----------
 
@@ -34,7 +35,7 @@ app.title = "Calidad del aire"
 
 # Componente 1: Calidad del aire por meses
 data1 = dict(
-    x=month_aqi_df["month"],
+    x=month_aqi_df["year-month"],
     y=month_aqi_df["aqi"],
     name="Calidad del aire por meses",
     marker=dict(
@@ -44,12 +45,8 @@ data1 = dict(
 layout1 = dict(
     title="Calidad del aire por meses",
     showlegend=True,
-    legend=dict(
-        x='Mes',
-        y='aqi (Indice de calidad del aire)'
-    ),
-    xaxis_title='Mes',
-    axis_title='aqi (Índice de calidad del aire)',
+    xaxis=dict(title="Año/Mes"),
+    yaxis=dict(title="AQI (Indice de calidad del aire)"),
     margin=dict(l=40, r=0, t=40, b=30)
 )
 
@@ -62,7 +59,7 @@ app.layout = html.Div([
         ),
         style={
             'height': 300, 
-            'width': 1300,
+            #'width': 1300,
             'margin': 'auto'
         }
     )
