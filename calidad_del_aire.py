@@ -63,7 +63,25 @@ layout2 = dict(
 
 # ---------
 
+aqi_table_text = '''
+# Informe sobre la calidad del aire en Cancún
+
+| Clasificación | Indice | NO_2       | PM_10       | O_3       | PM_2.5       |
+|---------------|--------|------------|-------------|-----------|--------------|
+| Buena         | 1      | 0 - 50     | 0 -  25     | 0 - 60    | 0 - 15       |
+| Regular       | 2      | 50 - 100   | 25 - 50     | 60 - 120  | 15 - 30      |
+| Moderada      | 3      | 100 - 200  | 50 - 90     | 120 - 180 | 40 - 55      |
+| Pobre         | 4      | 200 - 400  | 90 - 180    | 180 - 240 | 55 - 110     |
+| Muy pobre     | 5      | > 400      | > 180       | > 240     | > 110        |
+'''
+
 app.layout = html.Div([
+    dcc.Markdown(
+        children=aqi_table_text,
+        style={
+            'font-family': 'Arial'
+        }
+    ),
     dcc.Graph(
         id='aqi-per-month',
         figure=dict(
