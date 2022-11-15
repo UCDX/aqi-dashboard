@@ -74,17 +74,25 @@ def buid_fig_aqi_progress_by_loc_year_month(data, locations):
     'data': fig_data,
     'layout': {
       'showlegend': True,
+      'legend': {
+        'orientation':'v',
+        'yanchor':'bottom',
+        'y':1,
+        'xanchor':'center',
+        'x':0.5
+      },
       'xaxis': {
-        'title': 'Año/Mes'
+        'title': 'Año/Mes',
+        'tickangle': -90
       },
       'yaxis': {
         'title': 'AQI (Indice de calidad del aire)'
       },
       'margin': {
         'l': 40,
-        'r': 0,
+        'r': 10,
         't': 40,
-        'b': 30
+        'b': 80
       }
     }
   }
@@ -314,9 +322,9 @@ app.layout = html.Div( [
                                         locations),
                                     style={
                                         
-                                        "height": 300, 
+                                        "height": 400, 
                                         
-                                        'width': 1000,
+                                        'width': '90%',
                                         'margin': 'auto'
                                     }
                                     ),
@@ -328,7 +336,7 @@ app.layout = html.Div( [
                                     id='aqi-by-year',
                                     style={
                                         'height': 300, 
-                                        'width': 1000,
+                                        'width': '90%',
                                         'margin': 'auto'
                                     }
                                     )
