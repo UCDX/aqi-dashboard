@@ -36,10 +36,10 @@ months_name = [
 
 def get_db_connection():
   return psycopg2.connect(
-    host= "school-projects.cf1pikxnxsbu.us-east-2.rds.amazonaws.com",
-    database= "aqi_project",
-    user= "aqi_project_user",
-    password= "b58a74a2700d5f2bfaa2")
+    host= 'school-projects.cf1pikxnxsbu.us-east-2.rds.amazonaws.com',
+    database= 'aqi_project',
+    user= 'aqi_project_user',
+    password= 'b58a74a2700d5f2bfaa2')
 
 
 def compute_aqi_progress_by_loc_year_month(data):
@@ -101,7 +101,7 @@ def buid_fig_aqi_progress_by_loc_year_month(data, locations):
 # ------------------------------------ Data Warehouse usage ----------------------------------
 conexion = get_db_connection()
 
-full_extraction_query = """
+full_extraction_query = '''
 SELECT 
   D_A.AQI,
   D_A.CLASSIFICATION,
@@ -141,7 +141,7 @@ INNER JOIN DIM_TIME D_T
   ON D_T.ID = F_AM.TIME_ID 
 INNER JOIN DIM_AQI D_A
   ON D_A.ID = F_AM.AQI_ID
-"""
+'''
 
 print('\n---------Extracting from DW----------')
 data_air = pd.read_sql(full_extraction_query, conexion)
@@ -149,78 +149,50 @@ locations = data_air['full_location_name'].unique().tolist()
 conexion.close()
 print('\n---------Extraction: done----------')
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 ###--------------Build the figures / dropdowns------------------------------------
 
 x = np.random.sample(100)
 y = np.random.sample(100)
 z = np.random.choice(a = ['a','b','c'], size = 100)
 
-
 df1 = pd.DataFrame({'x': x, 'y':y, 'z':z}, index = range(100))
 
 fig1 = px.scatter(df1, x= x, y = y, color = z)
 
 SIDEBAR_STYLE = {
-
-    "top": 98,
-    "left": 0,
-    "bottom": 0,
-    "width": "24rem",
-    "height": "145vh",
-    "padding": "2rem 1rem",
-    "background-color": "#A4CEE7",
+  'top': 98,
+  'left': 0,
+  'bottom': 0,
+  'width': '24rem',
+  'height': '145vh',
+  'padding': '2rem 1rem',
+  'background-color': '#A4CEE7',
 }
 
 
 sidebar = html.Div(
-    [
-        html.H2("Filtros"),
-        html.Hr(),
-        html.P(
-            "FECHAS"
-        ),
-        dbc.Nav(
-            [
-                
-               #PARA LA FECHA
-                
-            ],
-            vertical=True,
-            pills=True,
-        ),
-
-        html.Hr(),
-        html.P(
-            "CIUDAD PARA COMPARACIÓN DE AQI ENTRE AÑOS"),
-         dbc.Nav(
-            [
-                
-                dcc.Dropdown(locations, locations[0], id='locations-dropdown')
-                
-            ],
-            vertical=True,
-            pills=True,
-        ),
-
-    ],
-    style=SIDEBAR_STYLE,
+  [
+    html.H2('Filtros'),
+    html.Hr(),
+    html.P('FECHAS'),
+    dbc.Nav(
+      [
+        #PARA LA FECHA
+      ],
+      vertical=True,
+      pills=True,
+    ),
+    html.Hr(),
+    html.P('CIUDAD PARA COMPARACIÓN DE AQI ENTRE AÑOS'),
+    dbc.Nav(
+      [
+        dcc.Dropdown(locations, locations[0], id='locations-dropdown')
+      ],
+      vertical=True,
+      pills=True,
+    ),
+  ],
+  style=SIDEBAR_STYLE,
 )
 
 
@@ -228,130 +200,103 @@ sidebar = html.Div(
 
 app = dash.Dash(external_stylesheets=[dbc.themes.LUX])
 
-app.layout = html.Div( [
-            
-        html.Div(
-            [
-                html.P("🌎", style={"text-align":"center","font-size":"110pt"}),
-                html.H1(
-                    children="DASHBOARD DE CALIDAD DEL AIRE", style={"text-align":"center", "color":"#ffffff"},
-                )
-            ] , style={"background-color": "#000000", "height": "38vh"},
-        ),
-       
-
-         html.Div( [
-                dbc.Row(
-                [
-                    dbc.Col(sidebar,  width=3),
-                    
-                    dbc.Col( html.Div( [
-
-                        dbc.Row([ 
-                                dbc.Card(
-                                dbc.CardBody(
-                                    [
-                                        html.H4("Promedio de calidad del aire en Cancún", style={"text-align":"center"}),
-                                        
-                                        dbc.Row([
-                                                dbc.Col( html.P( "1.27", style={"top":"30px", "text-align":"right","font-size":"40pt", "color":"#36C8DC"} ),),
-                                                dbc.Col( html.Img(src="https://cdn-icons-png.flaticon.com/512/594/594846.png", width=68)) 
-                                                ]),
-                                        
-                                        
-                                        html.H4("Promedio de calidad del aire en Ciudad de México", style={"text-align":"center"}),
-                                        dbc.Row([
-                                                dbc.Col(html.P("3.08" ,  style={"top":"30px", "text-align":"right","font-size":"40pt", "color":"#878787"} ) ),
-                                                dbc.Col(html.Img(src="https://cdn-icons-png.flaticon.com/512/594/594840.png", width=68) )  
-                                                ]),
-                                    
-                                        
-                                    ]
-                                    ),                            
-
-                                style={"top":"30px","width": "30rem", "height": "40vh", "left":"15px"},
-                            ),
-                            
-                           
-                                dbc.Card(
-                                dbc.CardBody(
-                                    [
-                                        html.H4("AQI - Puntaje de calidad del aire", style={"text-align":"center"}),
-                                        
-                                        html.P(
-                                            "Significado de los puntajes de la calidad del aire", style={"text-align":"center"}
-                                            
-                                            
-                                        ),
-                                            html.Div( [
-                                            dbc.Row([
-                                                dbc.Col( html.Img(src="https://cdn-icons-png.flaticon.com/512/594/594846.png", width=68)),
-                                                dbc.Col( html.Img(src="https://cdn-icons-png.flaticon.com/512/5853/5853933.png", width=68)),
-                                                dbc.Col( html.Img(src="https://cdn-icons-png.flaticon.com/512/594/594840.png", width=68)),
-                                                dbc.Col( html.Img(src="https://cdn-icons-png.flaticon.com/512/595/595005.png", width=68)),
-                                                dbc.Col( html.Img(src="https://cdn-icons-png.flaticon.com/512/481/481037.png", width=68)),
-                                            ]),
-                                            dbc.Row([
-                                                dbc.Col(html.P("1 Buena", style={"text-align":"left","font-size":"10pt"})),
-                                                dbc.Col(html.P("2 Regular", style={"text-align":"left","font-size":"10pt"})),
-                                                dbc.Col(html.P("3 Moderada", style={"text-align":"left","font-size":"10pt"})),
-                                                dbc.Col(html.P("4 Pobre", style={"text-align":"left","font-size":"10pt"})),
-                                                dbc.Col(html.P("5 Muy pobre", style={"text-align":"left","font-size":"10pt"}))                                            ]),
-                                            ]) 
-
-                                            
-                                       
-                                    ]
-                                ),
-                                style={"top":"30px","width": "38rem", "height": "40vh", "left":"30px"},
-                            ) 
-                            
-                            ]),
-                            
-                            dbc.Row([ 
-                                
-                                html.P("."),  html.P("."),
-                                    
-                                html.H3(
-                                    'Progreso de la calidad del aire por mes'),
-
-                                    dcc.Graph(
-                                    id='aqi-per-month',
-                                    figure = buid_fig_aqi_progress_by_loc_year_month(
-                                        compute_aqi_progress_by_loc_year_month(data_air),
-                                        locations),
-                                    style={
-                                        
-                                        "height": 400, 
-                                        
-                                        'width': '90%',
-                                        'margin': 'auto'
-                                    }
-                                    ),
-                                    html.P("."), 
-                                    html.H3('Comparación de la calidad del aire entre años'),
-                                    
-
-                                    dcc.Graph(
-                                    id='aqi-by-year',
-                                    style={
-                                        'height': 300, 
-                                        'width': '90%',
-                                        'margin': 'auto'
-                                    }
-                                    )
-                             ] 
-                                    ) 
-                    ]))
-                        
-                ]
-                )
-            ])
-
-
-              
+app.layout = html.Div(
+  [
+    # Header
+    html.Div(
+      [
+        html.P('🌎', style={'text-align':'center','font-size':'110pt'}),
+        html.H1(
+          children='DASHBOARD DE CALIDAD DEL AIRE', style={'text-align':'center', 'color':'#ffffff'},
+        )
+      ], 
+      style={'background-color': '#000000', 'height': '38vh'},
+    ),
+    # Body
+    html.Div([
+      dbc.Row([
+        # Sidebar
+        dbc.Col(sidebar,  width=3),
+        # Main section
+        dbc.Col( html.Div([
+          # AQI general info.
+          dbc.Row([ 
+            dbc.Card(
+              dbc.CardBody([
+                html.H4('Promedio de calidad del aire en Cancún', style={'text-align':'center'}),
+                dbc.Row([
+                  dbc.Col( html.P( '1.27', style={'top':'30px', 'text-align':'right','font-size':'40pt', 'color':'#36C8DC'} )),
+                  dbc.Col( html.Img(src='https://cdn-icons-png.flaticon.com/512/594/594846.png', width=68)) 
+                ]),
                 
-    ], style ={"background-color": "#F3F3F3 "}
+                
+                html.H4('Promedio de calidad del aire en Ciudad de México', style={'text-align':'center'}),
+                dbc.Row([
+                  dbc.Col(html.P('3.08' ,  style={'top':'30px', 'text-align':'right','font-size':'40pt', 'color':'#878787'} ) ),
+                  dbc.Col(html.Img(src='https://cdn-icons-png.flaticon.com/512/594/594840.png', width=68) )  
+                ]),
+              ]),
+              style={'top':'30px','width': '30rem', 'height': '40vh', 'left':'15px'},
+            ),
+              
+            dbc.Card(
+              dbc.CardBody([
+                html.H4('AQI - Puntaje de calidad del aire', style={'text-align':'center'}),
+                html.P(
+                  'Significado de los puntajes de la calidad del aire', style={'text-align':'center'}
+                ),
+                html.Div([
+                  dbc.Row([
+                    dbc.Col( html.Img(src='https://cdn-icons-png.flaticon.com/512/594/594846.png', width=68)),
+                    dbc.Col( html.Img(src='https://cdn-icons-png.flaticon.com/512/5853/5853933.png', width=68)),
+                    dbc.Col( html.Img(src='https://cdn-icons-png.flaticon.com/512/594/594840.png', width=68)),
+                    dbc.Col( html.Img(src='https://cdn-icons-png.flaticon.com/512/595/595005.png', width=68)),
+                    dbc.Col( html.Img(src='https://cdn-icons-png.flaticon.com/512/481/481037.png', width=68)),
+                  ]),
+                  dbc.Row([
+                    dbc.Col(html.P('1 Buena', style={'text-align':'left','font-size':'10pt'})),
+                    dbc.Col(html.P('2 Regular', style={'text-align':'left','font-size':'10pt'})),
+                    dbc.Col(html.P('3 Moderada', style={'text-align':'left','font-size':'10pt'})),
+                    dbc.Col(html.P('4 Pobre', style={'text-align':'left','font-size':'10pt'})),
+                    dbc.Col(html.P('5 Muy pobre', style={'text-align':'left','font-size':'10pt'}))                                            
+                  ]),
+                ]) 
+              ]),
+              style={'top':'30px','width': '38rem', 'height': '40vh', 'left':'30px'},
+            )
+          ]),
+          # Main charts.
+          dbc.Row([ 
+            html.P('.'),  html.P('.'),
+            html.H3('Progreso de la calidad del aire por mes'),
+            dcc.Graph(
+              id='aqi-per-month',
+              figure = buid_fig_aqi_progress_by_loc_year_month(
+                compute_aqi_progress_by_loc_year_month(data_air),
+                locations),
+              style={
+                'height': 400, 
+                'width': '90%',
+                'margin': 'auto'
+              }
+            ),
+
+            html.P('.'), 
+            html.H3('Comparación de la calidad del aire entre años'),
+            dcc.Graph(
+              id='aqi-by-year',
+              style={
+                'height': 300, 
+                'width': '90%',
+                'margin': 'auto'
+              }
+            )
+          ])
+        ]))
+      ])
+    ])
+  ],
+  style ={'background-color': '#F3F3F3 '}
 )
 
 @app.callback(
