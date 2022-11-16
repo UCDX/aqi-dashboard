@@ -97,6 +97,26 @@ def buid_fig_aqi_progress_by_loc_year_month(data, locations):
     }
   }
 
+def buid_fig_mean_polluting_gases():
+  global data_air
+
+  df = pd.DataFrame({
+    'Gas': ['co', 'no', 'no2', 'o3', 'so2', 'pm2_5', 'pm10', 'nh3'],
+    'Сoncentración en μg/m3': [
+      data_air['co'].mean(), 
+      data_air['no'].mean(),
+      data_air['no2'].mean(),
+      data_air['o3'].mean(),
+      data_air['so2'].mean(),
+      data_air['pm2_5'].mean(),
+      data_air['pm10'].mean(),
+      data_air['nh3'].mean()
+    ]
+  })
+
+  fig = px.bar(df, x='Gas', y='Сoncentración en μg/m3')
+
+  return fig
 
 # ------------------------------------ Data Warehouse usage ----------------------------------
 conexion = get_db_connection()
@@ -267,7 +287,8 @@ app.layout = html.Div(
           ]),
           # Main charts.
           dbc.Row([ 
-            html.P('.'),  html.P('.'),
+            html.P(' '), html.P(' '),
+            html.P(' '), html.P(' '),
             html.H3('Progreso de la calidad del aire por mes'),
             dcc.Graph(
               id='aqi-per-month',
@@ -281,12 +302,23 @@ app.layout = html.Div(
               }
             ),
 
-            html.P('.'), 
+            html.P(' '), html.P(' '),
             html.H3('Comparación de la calidad del aire entre años'),
             dcc.Graph(
               id='aqi-by-year',
               style={
                 'height': 300, 
+                'width': '90%',
+                'margin': 'auto'
+              }
+            ),
+
+            html.P(' '), html.P(' '),
+            html.H3('Promedio de la concentración de gases contaminantes'),
+            dcc.Graph(
+              id='mean-polluting-gases',
+              figure = buid_fig_mean_polluting_gases(),
+              style={
                 'width': '90%',
                 'margin': 'auto'
               }
