@@ -1,12 +1,16 @@
 from enum import auto
 from turtle import width
+
 import pandas as pd
 import numpy as np
+import psycopg2
+import datetime
+
 import dash
 import dash_bootstrap_components as dbc
-from dash_bootstrap_templates import load_figure_template
 import plotly.graph_objs as go
 import plotly.express as px
+
 from dash.dependencies import Input,Output
 from dash import callback_context
 
@@ -14,11 +18,8 @@ import plotly           #(version 4.5.4) pip install plotly==4.5.4
 from dash import Dash, dcc, html, dash_table
 import plotly.graph_objs as go
 from dash.dependencies import Input, Output
-import psycopg2
 
-import datetime
-
-load_figure_template('LUX')
+from statsmodels.tsa.statespace.sarimax import SARIMAX
 
 ###-------------    PREPROCESO
 
@@ -44,15 +45,102 @@ def get_db_connection():
 
 def compute_aqi_progress_by_loc_year_month(data):
   print('\n---------Computing aggregations----------')
-  aqui_progress_df = data.groupby(
-    ['full_location_name', 'calendar_year', 'calendar_month'],
-    as_index = False)['aqi'].mean()
-  aqui_progress_df['year-month'] = aqui_progress_df.apply(
-    lambda row: f'{int(row["calendar_year"]) % 2000}/{months_name[row["calendar_month"]]}', axis = 1)
-  aqui_progress_df['month_name'] = aqui_progress_df.apply(
-    lambda row: f'{months_name[row["calendar_month"]]}', axis = 1)
+  aqui_progress_df = data.groupby(['full_location_name', 'calendar_year', 'calendar_month'], as_index = False)['aqi'].mean()
+  aqui_progress_df['year-month'] = aqui_progress_df.apply(lambda row: f'{int(row["calendar_year"]) % 2000}/{months_name[row["calendar_month"]]}', axis = 1)
+  aqui_progress_df['month_name'] = aqui_progress_df.apply(lambda row: f'{months_name[row["calendar_month"]]}', axis = 1)
   print('\n---------Computing aggregation: done----------')
   return aqui_progress_df
+
+def serie_aqi_mes(data):
+  aqi_mean = data.groupby(['full_location_name', 'calendar_year', 'calendar_month'], as_index = False)['aqi'].mean()
+
+  cancun = aqi_mean.loc[aqi_mean['full_location_name'] == 'México, Quintana Roo, Cancún, Centro']
+  cdmx = aqi_mean.loc[aqi_mean['full_location_name'] == 'México, CDMX, CDMX, Ángel de la Independencia']
+  
+  cancun = cancun.iloc[:,2:4]
+  cdmx = cdmx.iloc[:, 2:4]
+
+  nueva_fila1 = {'calendar_month':11,'aqi':1.247777}
+  nueva_fila2 = {'calendar_month':12,'aqi':1.11112}
+  nueva_fila3 = {'calendar_month':11,'aqi':3.075402}
+  nueva_fila4 = {'calendar_month':12,'aqi':3.997656}
+  
+  cancun=cancun.append(nueva_fila1, ignore_index=True) 
+  cancun=cancun.append(nueva_fila2, ignore_index=True) 
+  
+  cdmx=cdmx.append(nueva_fila3, ignore_index=True) 
+  cdmx=cdmx.append(nueva_fila4, ignore_index=True) 
+  
+  return cancun, cdmx
+
+
+def build_fig_aqi_pred_mx_cancun_2023(data_air):
+  
+  series_ind = serie_aqi_mes(data_air)
+  #can_2022 = series_ind[0]['aqi'].iloc[len(series_ind[0]['aqi'])-12:] #toma los datos del 2022
+  series_ind = serie_aqi_mes(data_air)
+  #mx_2022 = series_ind[1]['aqi'].iloc[len(series_ind[1]['aqi'])-12:] #toma los datos del 2022
+  
+  # Predicciones de tiempo
+  modelcn = SARIMAX(series_ind[0]['aqi'], order = (0,0,1), seasonal_order =(0,1,1,12))
+  resultcn = modelcn.fit()
+  
+  predictionscn = resultcn.predict(24, 35, typ = 'levels').rename("Predictions")
+  
+  modelmx = SARIMAX(series_ind[1]['aqi'], order = (0,0,1), seasonal_order =(0,1,1,12))
+  resultmx = modelmx.fit()
+  
+  predictionsmx = resultmx.predict(24, 35, typ = 'levels').rename("Predictions")
+  
+  # Preparación
+  temp1 = predictionsmx.to_frame()
+  column_month = predictionsmx.index.tolist()
+  temp1.insert(0, 'calendar_month', column_month)
+  
+  temp2 = predictionscn.to_frame()
+  column_month = predictionscn.index.tolist()
+  temp2.insert(0, 'calendar_month', column_month)
+  
+  months = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic']
+  temp1['calendar_month'] =  months
+  temp2['calendar_month'] =  months
+
+  
+  # Figura
+  fig_data = []
+  
+  fig_data.append({
+      'x': temp1['calendar_month'],
+      'y': temp1['Predictions'],
+      'name': 'Predicciones 2023 México'
+    })
+  
+  fig_data.append({
+      'x': temp2['calendar_month'],
+      'y': temp2['Predictions'],
+      'name': 'Predicciones 2023 Cancún'
+    })
+
+  print('\n---------Building figures: done----------')
+
+  return {
+    'data': fig_data,
+    'layout': {
+      'showlegend': True,
+      'xaxis': {
+        'title': 'MES'
+      },
+      'yaxis': {
+        'title': 'AQI (Indice de calidad del aire)'
+      },
+      'margin': {
+        'l': 40,
+        'r': 0,
+        't': 40,
+        'b': 30
+      }, 'title' : 'México'
+    }
+  }
 
 
 def buid_fig_aqi_progress_by_loc_year_month(data, locations):
@@ -85,10 +173,9 @@ def buid_fig_aqi_progress_by_loc_year_month(data, locations):
         'r': 0,
         't': 40,
         'b': 30
-      }
+      }, 'title' : 'hola'
     }
   }
-
 
 # ------------------------------------ Data Warehouse usage ----------------------------------
 conexion = get_db_connection()
@@ -378,13 +465,20 @@ app.layout = html.Div( [
                                                   figure=fig_cdmx
                                                   )
                                                   ) 
-                                                ])
-
-                                  ,
+                                                ]),
                                     html.P("."), 
-                                    html.H3('Predicción de calidad del aire 2023')
-                                    
-
+                                    html.H3('Predicción de calidad del aire 2023'),
+                                  
+                                    dcc.Graph(
+                                    id='aqi-per-month-pred-cancun',
+                                    figure = build_fig_aqi_pred_mx_cancun_2023(data_air),
+                                    style={
+                                        
+                                        "height": 300, 
+                                        'width': 1000,
+                                        'margin': 'auto'
+                                    })
+                                  
                                     
                              ] 
                                     ) 
@@ -408,9 +502,12 @@ app.layout = html.Div( [
 
 def update_location_filter_aqi_by_year(loc):
   global data_air
+  
   data = compute_aqi_progress_by_loc_year_month(data_air[ data_air['full_location_name'] == loc ])
   available_years = data['calendar_year'].unique().tolist()
+  
   fig_data = []
+  
   for year in available_years:
     year_data = data[ data['calendar_year'] == year ]
     fig_data.append({
@@ -418,6 +515,7 @@ def update_location_filter_aqi_by_year(loc):
       'y': year_data['aqi'],
       'name': str(year)
     })
+    
   return {
     'data': fig_data,
     'layout': {
