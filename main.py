@@ -145,13 +145,42 @@ print('\n---------Extraction: done----------')
 
 
 
+###--------Sección para dataframes con nuevos datos  
+
+###pronmedio ce calidad del aire en cancun
+data_cancun = data_air[ data_air['full_location_name'] == 'México, Quintana Roo, Cancún, Centro' ]
+counts_cancun = pd.value_counts(data_cancun['aqi'])
+df2= counts_cancun.to_frame()
+df3=df2
+df3['percent'] = (df2['aqi'] / df2['aqi'].sum()) * 100
+df3['index'] = df3.index
+label_cancun = ['1','2','3','4']
+fig_cancun = px.pie(values=df3['percent'], names= label_cancun, width=400, height=400, title='CANCUN', color=label_cancun, color_discrete_map={
+                                 '1':'#30A4DF',
+                                 '2':'#FC6ECD',
+                                 '3':'#616161',
+                                 '4':'#E1121E'})
 
 
 
+### promedio de calidad del aire en cdmx
 
+data_cdmx = data_air[ data_air['full_location_name'] == 'México, CDMX, CDMX, Ángel de la Independencia' ]
+counts_cdmx = pd.value_counts(data_cdmx['aqi'])
+df4= counts_cdmx.to_frame()
+df5=df4
+df5['percent'] = (df4['aqi'] / df4['aqi'].sum()) * 100
+df5['index'] = df5.index
 
-
-
+label_cdmx = ['4','5','1','2','3']
+fig_cdmx = px.pie(values=df5['percent'], names= label_cdmx, width=400, height=400 , title='CDMX', color=label_cdmx, color_discrete_map={
+                                  '4':'#E1121E',
+                                  '5':'#000000',
+                                 '1':'#30A4DF',
+                                 '2':'#FC6ECD',
+                                 '3':'#616161'
+                                 
+                                 })
 
 
 
@@ -175,7 +204,7 @@ SIDEBAR_STYLE = {
     "left": 0,
     "bottom": 0,
     "width": "24rem",
-    "height": "145vh",
+    "height": "250vh",
     "padding": "2rem 1rem",
     "background-color": "#A4CEE7",
 }
@@ -331,9 +360,36 @@ app.layout = html.Div( [
                                         'width': 1000,
                                         'margin': 'auto'
                                     }
-                                    )
+                                    ),
+                                    html.P("."), 
+                                    html.H3('PORCENTAJES DE AQI POR CIUDAD'),
+
+                                  
+                                    dbc.Row([
+                                                dbc.Col(
+                                                      dcc.Graph(
+                                                      id='percents_cancun',
+                                                      figure=fig_cancun
+                                                      )
+                                                  ),
+                                                dbc.Col( 
+                                                   dcc.Graph(
+                                                  id='percents_cdmx',
+                                                  figure=fig_cdmx
+                                                  )
+                                                  ) 
+                                                ])
+
+                                  ,
+                                    html.P("."), 
+                                    html.H3('Predicción de calidad del aire 2023')
+                                    
+
+                                    
                              ] 
                                     ) 
+
+
                     ]))
                         
                 ]
@@ -380,6 +436,7 @@ def update_location_filter_aqi_by_year(loc):
       }
     }
   }
+  
 
 if __name__ == '__main__':
   app.run_server(debug=True, port = 8000)
